@@ -9,9 +9,8 @@ class DuplicateFileHandler:
     def __init__(self, root_directory):
         self.root_directory = root_directory
         self.file_format = None
-        self.sorting_option = None
         self.files = defaultdict(set)
-        self.size_hash_table = defaultdict(dict)
+        self.hash_tables_by_size = defaultdict(dict)
 
     def scan_files(self):
         for root, dirs, files in os.walk(self.root_directory):
@@ -36,14 +35,22 @@ class DuplicateFileHandler:
                         digest = hashlib.file_digest(f, "md5")
                     file_hash = digest.hexdigest()
                     hash_table[file_hash].add(filepath)
-                self.size_hash_table[size] = hash_table
-        return self.size_hash_table
+                self.hash_tables_by_size[size] = hash_table
+        return self.hash_tables_by_size
+
+    def delete_files(self, files):
+        total_size = 0
+        for file in files:
+            total_size += getsize(file)
+            os.remove(file)
+        print(f"Total freed up space: {total_size} bytes")
 
 
 class DuplicateFileHandlerApplication:
     def __init__(self, root_directory):
         self.handler = DuplicateFileHandler(root_directory)
         self.sorting_option = None
+        self.duplicate_files = []
 
     def execute(self):
         self.handler.file_format = input("Enter file format: ")
@@ -60,6 +67,41 @@ class DuplicateFileHandlerApplication:
         if check_for_duplicates == "yes":
             self.print_equal_hashes()
 
+        self.select_files_to_delete()
+
+    def select_files_to_delete(self):
+        prompt = "\nDelete files? [yes/no]: "
+        while (delete_files := input(prompt)) not in ["yes", "no"]:
+            print("Wrong option")
+
+        if delete_files == "yes":
+            files_to_delete = []
+            file_numbers = self.read_file_numbers()
+            for index, file in enumerate(self.duplicate_files):
+                if index + 1 in file_numbers:
+                    files_to_delete.append(file)
+            self.handler.delete_files(files_to_delete)
+
+    def read_file_numbers(self):
+        file_numbers = []
+        prompt = "\nEnter file numbers to delete: "
+        while True:
+            try:
+                file_numbers = [int(x) for x in input(prompt).split()]
+            except ValueError:
+                print("\nWrong format")
+                continue
+            if not file_numbers:
+                print("\nWrong format")
+                continue
+            for number in file_numbers:
+                if not 1 <= number <= len(self.duplicate_files):
+                    print("\nWrong format")
+                    break
+            else:
+                break
+        return file_numbers
+
     def print_equal_sizes(self):
         is_descending = True if self.sorting_option == 1 else False
         files = self.handler.scan_files()
@@ -71,15 +113,18 @@ class DuplicateFileHandlerApplication:
 
     def print_equal_hashes(self):
         is_descending = True if self.sorting_option == 1 else False
-        size_hash_table = self.handler.compute_hashes()
+        hash_tables_by_size = self.handler.compute_hashes()
         counter = 1
-        for size, hash_table in sorted(size_hash_table.items(), reverse=is_descending):
+        for size, hash_table in sorted(
+            hash_tables_by_size.items(), reverse=is_descending
+        ):
             print(f"\n{size} bytes")
             for hash_, filepaths in hash_table.items():
                 if len(filepaths) > 1:
                     print(f"Hash: {hash_}")
                     for filepath in filepaths:
                         print(f"{counter}. {filepath}")
+                        self.duplicate_files.append(filepath)
                         counter += 1
 
 
