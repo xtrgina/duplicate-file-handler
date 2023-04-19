@@ -58,14 +58,14 @@ class DuplicateFileHandlerApplication:
         while (sorting_option := int(input("Enter a sorting option: "))) not in [1, 2]:
             print("Wrong option")
         self.sorting_option = sorting_option
-        self.print_equal_sizes()
+        self.display_duplicate_sizes()
 
         while (
             check_for_duplicates := input("\nCheck for duplicates? [yes/no]: ")
         ) not in ["yes", "no"]:
             print("Wrong option")
         if check_for_duplicates == "yes":
-            self.print_equal_hashes()
+            self.display_duplicate_hashes()
 
         self.select_files_to_delete()
 
@@ -102,7 +102,7 @@ class DuplicateFileHandlerApplication:
                 break
         return file_numbers
 
-    def print_equal_sizes(self):
+    def display_duplicate_sizes(self):
         is_descending = True if self.sorting_option == 1 else False
         files = self.handler.scan_files()
         for size, filepaths in sorted(files.items(), reverse=is_descending):
@@ -111,7 +111,7 @@ class DuplicateFileHandlerApplication:
                 for filepath in filepaths:
                     print(filepath)
 
-    def print_equal_hashes(self):
+    def display_duplicate_hashes(self):
         is_descending = True if self.sorting_option == 1 else False
         hash_tables_by_size = self.handler.compute_hashes()
         counter = 1
