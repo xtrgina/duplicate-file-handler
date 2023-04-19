@@ -10,8 +10,7 @@ class DuplicateFileHandler:
         self.root_directory = root_directory
         self.file_format = None
         self.sorting_option = None
-        self.files = dict()
-        # self.hash_table = defaultdict(set)
+        self.files = defaultdict(set)
         self.size_hash_table = defaultdict(dict)
 
     def scan_files(self):
@@ -24,12 +23,7 @@ class DuplicateFileHandler:
                     extension = splitext(name)[1]
                     if extension != "." + self.file_format:
                         continue
-
-                if size in self.files:
-                    self.files[size].add(filepath)
-                else:
-                    self.files[size] = set()
-                    self.files[size].add(filepath)
+                self.files[size].add(filepath)
 
         return self.files
 
